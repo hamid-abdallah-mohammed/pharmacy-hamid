@@ -12,7 +12,7 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false }
 });
 
-// إنشاء الجداول (الأدوية مع الأعراض المخصصة للتشخيص، المستخدمين، والطلبات)
+// إعادة بناء جدول المستخدمين والأدوية والطلبات بدقة
 pool.query(`
   CREATE TABLE IF NOT EXISTS medicines (
     id SERIAL PRIMARY KEY,
@@ -24,6 +24,9 @@ pool.query(`
 
   CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
+    fullname VARCHAR(100),
+    phone VARCHAR(30),
+    country_code VARCHAR(10) DEFAULT '+249',
     email VARCHAR(100) UNIQUE NOT NULL,
     password VARCHAR(50) NOT NULL,
     role VARCHAR(20) DEFAULT 'customer'
@@ -37,25 +40,24 @@ pool.query(`
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
   );
 `).then(async () => {
-  // إضافة أدمن افتراضي وحساب تجريبي
   await pool.query(`
-    INSERT INTO users (email, password, role) 
-    VALUES ('admin@pharmacy.com', '1234', 'admin') 
+    INSERT INTO users (fullname, phone, country_code, email, password, role) 
+    VALUES ('مدير النظام', '912345678', '+249', 'admin@pharmacy.com', '1234', 'admin') 
     ON CONFLICT (email) DO NOTHING;
   `);
 }).catch(err => console.error("Database setup error:", err));
 
-// تسجيل حساب جديد
+// تسجيل حساب جديد مع الاسم والهاتف والدولة
 app.post('/api/register', async (req, res) => {
-  const { email, password } = req.body;
+  const { fullname, phone, country_code, email, password } = req.body;
   try {
     const result = await pool.query(
-      'INSERT INTO users (email, password, role) VALUES ($1, $2, $3) RETURNING email, role',
-      [email, password, 'customer']
+      'INSERT INTO users (fullname, phone, country_code, email, password, role) VALUES ($1, $2, $3, $4, $5, $6) RETURNING email, role, fullname',
+      [fullname, phone, country_code || '+249', email, password, 'customer']
     );
     res.json({ success: true, user: result.rows[0] });
   } catch (err) {
-    res.status(400).json({ success: false, message: 'البريد الإلكتروني مستخدم من قبل' });
+    res.status(400).json({ success: false, message: 'البريد الإلكتروني مستخدم من قبل أو هناك خطأ في البيانات' });
   }
 });
 
@@ -64,7 +66,7 @@ app.post('/api/login', async (req, res) => {
   const { email, password } = req.body;
   try {
     const result = await pool.query(
-      'SELECT email, role FROM users WHERE email = $1 AND password = $2',
+      'SELECT email, role, fullname FROM users WHERE email = $1 AND password = $2',
       [email, password]
     );
     if (result.rows.length > 0) {
@@ -77,7 +79,6 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
-// جلب الأدوية
 app.get('/api/medicines', async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM medicines ORDER BY id DESC');
@@ -87,7 +88,6 @@ app.get('/api/medicines', async (req, res) => {
   }
 });
 
-// إضافة دواء (للأدمن) مع الأعراض المخصصة للتشخيص
 app.post('/api/medicines', async (req, res) => {
   const { name, price, symptoms, image } = req.body;
   try {
@@ -101,7 +101,6 @@ app.post('/api/medicines', async (req, res) => {
   }
 });
 
-// إتمام الشراء (سلة المشتريات)
 app.post('/api/checkout', async (req, res) => {
   const { email, items, total } = req.body;
   try {
