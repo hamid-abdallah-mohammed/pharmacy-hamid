@@ -2,61 +2,159 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>نظام إدارة الصيدلية</title>
+    <title>نظام إدارة الصيدلية الذكي</title>
     <style>
-        body { font-family: Tahoma, sans-serif; background: #f4f7f6; padding: 20px; direction: rtl; }
-        .container { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        input, button { width: 100%; padding: 10px; margin: 8px 0; box-sizing: border-box; }
-        button { background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        body { font-family: Tahoma, sans-serif; background: #f4f7f6; padding: 20px; direction: rtl; margin: 0; }
+        .container { max-width: 700px; margin: auto; background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        input, button { width: 100%; padding: 12px; margin: 10px 0; box-sizing: border-box; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; }
+        button { background: #28a745; color: white; border: none; cursor: pointer; font-weight: bold; }
         button:hover { background: #218838; }
+        .logout-btn { background: #dc3545; width: auto; padding: 8px 15px; float: left; margin-top: -10px; }
+        .logout-btn:hover { background: #c82333; }
         table { width: 100%; margin-top: 20px; border-collapse: collapse; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
-        th { background: #f2f2f2; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: center; vertical-align: middle; }
+        th { background: #f8f9fa; }
+        .med-img { width: 50px; height: 50px; object-fit: cover; border-radius: 5px; }
+        .hidden { display: none !important; }
+        .error { color: red; text-align: center; font-size: 14px; }
     </style>
 </head>
 <body>
+
 <div class="container">
-    <h2>إدارة الصيدلية - النظام الذكي</h2>
-    <form id="medForm">
-        <input type="text" id="name" placeholder="اسم الدواء" required>
-        <input type="number" id="quantity" placeholder="الكمية" required>
-        <input type="number" step="0.01" id="price" placeholder="السعر" required>
-        <button type="submit">إضافة الدواء</button>
-    </form>
-    <h3>قائمة الأدوية</h3>
-    <table>
-        <thead>
-            <tr>
-                <th>الاسم</th>
-                <th>الكمية</th>
-                <th>السعر</th>
-            </tr>
-        </thead>
-        <tbody id="medList"></tbody>
-    </table>
+    <!-- شاشة تسجيل الدخول -->
+    <div id="loginSection">
+        <h2>تسجيل الدخول للنظام</h2>
+        <p style="color: #666; font-size: 14px;">اسم المستخدم الافتراضي: <b>admin</b> | كلمة المرور: <b>1234</b></p>
+        <form id="loginForm">
+            <input type="text" id="username" placeholder="اسم المستخدم" required>
+            <input type="password" id="password" placeholder="كلمة المرور" required>
+            <button type="submit">دخول</button>
+            <p id="loginError" class="error"></p>
+        </form>
+    </div>
+
+    <!-- لوحة التحكم الرئيسية (تظهر بعد الدخول) -->
+    <div id="dashboardSection" class="hidden">
+        <button class="logout-btn" onclick="logout()">تسجيل خروج</button>
+        <h2>إدارة الصيدلية - النظام الذكي</h2>
+        
+        <form id="medForm">
+            <input type="text" id="name" placeholder="اسم الدواء" required>
+            <input type="number" id="quantity" placeholder="الكمية" required>
+            <input type="number" step="0.01" id="price" placeholder="السعر" required>
+            <label style="text-align: right; display: block; margin-top: 5px; font-size: 14px; color: #555;">صورة الدواء:</label>
+            <input type="file" id="imageFile" accept="image/*">
+            <button type="submit">إضافة الدواء</button>
+        </form>
+
+        <h3>قائمة الأدوية المتوفرة</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>الصورة</th>
+                    <th>الاسم</th>
+                    <th>الكمية</th>
+                    <th>السعر</th>
+                </tr>
+            </thead>
+            <tbody id="medList"></tbody>
+        </table>
+    </div>
 </div>
+
 <script>
-    async function loadMeds() {
-        const res = await fetch('/api/medicines');
-        const data = await res.json();
-        const list = document.getElementById('medList');
-        list.innerHTML = data.map(m => `<tr><td>${m.name}</td><td>${m.quantity}</td><td>${m.price}</td></tr>`).join('');
+    // التحقق من حالة الدخول مسبقاً
+    if (localStorage.getItem('isLoggedIn') === 'true') {
+        showDashboard();
     }
+
+    // تسجيل الدخول
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+
+        const res = await fetch('/api/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            localStorage.setItem('isLoggedIn', 'true');
+            showDashboard();
+        } else {
+            document.getElementById('loginError').innerText = data.message;
+        }
+    });
+
+    function showDashboard() {
+        document.getElementById('loginSection').classList.add('hidden');
+        document.getElementById('dashboardSection').classList.remove('hidden');
+        loadMeds();
+    }
+
+    function logout() {
+        localStorage.removeItem('isLoggedIn');
+        document.getElementById('dashboardSection').classList.add('hidden');
+        document.getElementById('loginSection').classList.remove('hidden');
+    }
+
+    // تحويل الصورة المرفوعة إلى Base64 لعرضها وحفظها
+    function getBaseImage(file) {
+        return new Promise((resolve) => {
+            if (!file) return resolve('');
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.readAsDataURL(file);
+        });
+    }
+
+    // جلب الأدوية وتعبئتها في الجدول
+    async function loadMeds() {
+        try {
+            const res = await fetch('/api/medicines');
+            const data = await res.json();
+            const list = document.getElementById('medList');
+            list.innerHTML = data.map(m => `
+                <tr>
+                    <td>${m.image ? `<img src="${m.image}" class="med-img">` : 'لا توجد'}</td>
+                    <td>${m.name}</td>
+                    <td>${m.quantity}</td>
+                    <td>${m.price}</td>
+                </tr>
+            `).join('');
+        } catch (err) {
+            console.error("Error loading medicines:", err);
+        }
+    }
+
+    // إضافة دواء جديد
     document.getElementById('medForm').addEventListener('submit', async (e) => {
         e.preventDefault();
+        const fileInput = document.getElementById('imageFile');
+        let imageBase64 = '';
+        if (fileInput.files.length > 0) {
+            imageBase64 = await getBaseImage(fileInput.files[0]);
+        }
+
         await fetch('/api/medicines', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 name: document.getElementById('name').value,
                 quantity: document.getElementById('quantity').value,
-                price: document.getElementById('price').value
+                price: document.getElementById('price').value,
+                image: imageBase64
             })
         });
+
         document.getElementById('medForm').reset();
         loadMeds();
     });
-    loadMeds();
 </script>
+
 </body>
 </html>
