@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>نظام إدارة الصيدلية</title>
+    <style>
+        body { font-family: Tahoma, sans-serif; background: #f4f7f6; padding: 20px; direction: rtl; }
+        .container { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        input, button { width: 100%; padding: 10px; margin: 8px 0; box-sizing: border-box; }
+        button { background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #218838; }
+        table { width: 100%; margin-top: 20px; border-collapse: collapse; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+        th { background: #f2f2f2; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>إدارة الصيدلية - النظام الذكي</h2>
+    <form id="medForm">
+        <input type="text" id="name" placeholder="اسم الدواء" required>
+        <input type="number" id="quantity" placeholder="الكمية" required>
+        <input type="number" step="0.01" id="price" placeholder="السعر" required>
+        <button type="submit">إضافة الدواء</button>
+    </form>
+    <h3>قائمة الأدوية</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>الاسم</th>
+                <th>الكمية</th>
+                <th>السعر</th>
+            </tr>
+        </thead>
+        <tbody id="medList"></tbody>
+    </table>
+</div>
+<script>
+    async function loadMeds() {
+        const res = await fetch('/api/medicines');
+        const data = await res.json();
+        const list = document.getElementById('medList');
+        list.innerHTML = data.map(m => `<tr><td>${m.name}</td><td>${m.quantity}</td><td>${m.price}</td></tr>`).join('');
+    }
+    document.getElementById('medForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        await fetch('/api/medicines', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                name: document.getElementById('name').value,
+                quantity: document.getElementById('quantity').value,
+                price: document.getElementById('price').value
+            })
+        });
+        document.getElementById('medForm').reset();
+        loadMeds();
+    });
+    loadMeds();
+</script>
+</body>
+</html>
