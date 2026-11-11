@@ -2,12 +2,12 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>صيدلية الشفاء الذكية - المتجر المتكامل</title>
+    <title>صيدلية الشفاء الذكية - السودان</title>
     <style>
         body { font-family: Tahoma, sans-serif; background: #f0f2f5; margin: 0; padding: 15px; direction: rtl; }
         .container { max-width: 900px; margin: auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         h2, h3 { color: #2c3e50; text-align: center; }
-        input, textarea, button { width: 100%; padding: 12px; margin: 8px 0; box-sizing: border-box; border: 1px solid #ccc; border-radius: 8px; font-size: 15px; }
+        input, textarea, select, button { width: 100%; padding: 12px; margin: 8px 0; box-sizing: border-box; border: 1px solid #ccc; border-radius: 8px; font-size: 15px; }
         button { background: #007bff; color: white; border: none; cursor: pointer; font-weight: bold; }
         button:hover { background: #0056b3; }
         .btn-success { background: #28a745; }
@@ -15,17 +15,15 @@
         .btn-danger { background: #dc3545; width: auto; padding: 6px 12px; }
         .hidden { display: none !important; }
         
-        /* تصميم الأدوية كبطاقات متجر */
+        .phone-group { display: flex; gap: 8px; }
+        .phone-group select { width: 110px; }
+
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-top: 20px; }
         .card { background: #fff; border: 1px solid #e1e4e8; border-radius: 10px; padding: 15px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .card img { width: 100px; height: 100px; object-fit: cover; border-radius: 8px; margin-bottom: 10px; }
-        .card h4 { margin: 5px 0; color: #333; }
         .price { color: #28a745; font-weight: bold; font-size: 16px; }
 
-        /* صندوق التشخيص الذكي */
         .diagnose-box { background: #e8f4fd; border: 2px dashed #007bff; padding: 15px; border-radius: 10px; margin-bottom: 20px; }
-        
-        /* شريط العلوي والسلة */
         .header-bar { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px; }
         .cart-section { background: #fff3cd; padding: 15px; border-radius: 8px; margin-top: 20px; }
         .error { color: red; text-align: center; font-size: 14px; }
@@ -37,12 +35,25 @@
     
     <!-- قسم تسجيل الدخول / إنشاء حساب -->
     <div id="authSection">
-        <h2>تسجيل الدخول إلى صيدلية الشفاء</h2>
+        <h2 id="authTitle">تسجيل الدخول إلى صيدلية الشفاء</h2>
         <form id="authForm">
+            <!-- حقول تظهر فقط عند إنشاء الحساب -->
+            <div id="registerFields" class="hidden">
+                <input type="text" id="fullname" placeholder="الاسم الكامل">
+                <div class="phone-group">
+                    <select id="countryCode">
+                        <option value="+249" selected>السودان (+249)</option>
+                        <option value="+20">مصر (+20)</option>
+                        <option value="+966">السعودية (+966)</option>
+                    </select>
+                    <input type="tel" id="phone" placeholder="رقم الهاتف (مثلاً: 912345678)">
+                </div>
+            </div>
+
             <input type="email" id="authEmail" placeholder="البريد الإلكتروني" required>
             <input type="password" id="authPassword" placeholder="كلمة المرور" required>
             <button type="submit" id="authBtn">تسجيل الدخول</button>
-            <button type="button" class="btn-success" onclick="toggleAuthMode()">إنشاء حساب جديد</button>
+            <button type="button" class="btn-success" onclick="toggleAuthMode()" id="switchBtn">إنشاء حساب جديد</button>
             <p id="authError" class="error"></p>
         </form>
     </div>
@@ -58,21 +69,20 @@
 
         <!-- صندوق التشخيص الذكي -->
         <div class="diagnose-box">
-            <h3 style="margin-top:0; color:#0056b3;">🤖 صندوق التشخيص الذكي (تحت إشراف صيدلي)</h3>
-            <p style="font-size: 13px; color: #555;">اكتب ما تشعر به (مثلاً: صداع شديد، حمى، ألم أسنان، مغص):</p>
+            <h3 style="margin-top:0; color:#0056b3;">🤖 صندوق التشخيص الذكي</h3>
+            <p style="font-size: 13px; color: #555;">اكتب ما تشعر به (مثل: صداع، حمى، مغص):</p>
             <textarea id="userSymptoms" rows="2" placeholder="اكتب أعراضك هنا..."></textarea>
             <button onclick="diagnoseSymptoms()" class="btn-success">تشخيص واقتراح الدواء المناسب</button>
             <div id="diagnoseResult" style="margin-top: 10px; font-weight: bold; color: #d9534f;"></div>
         </div>
 
-        <!-- لوحة التحكم لإضافة الأدوية (تظهر للأدمن فقط) -->
+        <!-- لوحة التحكم لإضافة الأدوية (للأدمن) -->
         <div id="adminPanel" class="hidden" style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
             <h3 style="margin-top:0;">إدارة الأدوية (خاص بالأدمن)</h3>
             <form id="addMedForm">
                 <input type="text" id="medName" placeholder="اسم الدواء" required>
                 <input type="number" step="0.01" id="medPrice" placeholder="السعر ($)" required>
-                <input type="text" id="medSymptoms" placeholder="الأعراض التي يعالجها (مثلاً: صداع، حمى)" required>
-                <label style="font-size: 13px; color: #555;">صورة الدواء:</label>
+                <input type="text" id="medSymptoms" placeholder="الأعراض التي يعالجها (مثلاً: صداع)" required>
                 <input type="file" id="medImage" accept="image/*" required>
                 <button type="submit" class="btn-success">إضافة الدواء للمتجر</button>
             </form>
@@ -104,21 +114,32 @@
 
     function toggleAuthMode() {
         isRegisterMode = !isRegisterMode;
-        document.getElementById('authBtn').innerText = isRegisterMode ? 'إنشاء الحساب' : 'تسجيل الدخول';
-        document.querySelector('button[onclick="toggleAuthMode()"]').innerText = isRegisterMode ? 'لديك حساب؟ تسجيل الدخول' : 'إنشاء حساب جديد';
+        document.getElementById('registerFields').classList.toggle('hidden', !isRegisterMode);
+        document.getElementById('authTitle').innerText = isRegisterMode ? 'إنشاء حساب جديد في الصيدلية' : 'تسجيل الدخول إلى صيدلية الشفاء';
+        document.getElementById('authBtn').innerText = isRegisterMode ? 'تسجيل وحفظ الحساب' : 'تسجيل الدخول';
+        document.getElementById('switchBtn').innerText = isRegisterMode ? 'لديك حساب؟ تسجيل الدخول' : 'إنشاء حساب جديد';
+        document.getElementById('authError').innerText = '';
     }
 
-    // تسجيل الدخول أو التسجيل
     document.getElementById('authForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const email = document.getElementById('authEmail').value;
         const password = document.getElementById('authPassword').value;
-        const endpoint = isRegisterMode ? '/api/register' : '/api/login';
+        
+        let bodyData = { email, password };
+        let endpoint = '/api/login';
+
+        if (isRegisterMode) {
+            endpoint = '/api/register';
+            bodyData.fullname = document.getElementById('fullname').value;
+            bodyData.phone = document.getElementById('phone').value;
+            bodyData.country_code = document.getElementById('countryCode').value;
+        }
 
         const res = await fetch(endpoint, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password })
+            body: JSON.stringify(bodyData)
         });
         const data = await res.json();
 
@@ -134,7 +155,7 @@
     function showShop() {
         document.getElementById('authSection').classList.add('hidden');
         document.getElementById('shopSection').classList.remove('hidden');
-        document.getElementById('userDisplay').innerText = `مرحباً بك: ${currentUser.email} (${currentUser.role === 'admin' ? 'مدير' : 'زبون'})`;
+        document.getElementById('userDisplay').innerText = `مرحباً بك: ${currentUser.fullname || currentUser.email} (${currentUser.role === 'admin' ? 'مدير' : 'زبون'})`;
         
         if (currentUser.role === 'admin') {
             document.getElementById('adminPanel').classList.remove('hidden');
@@ -149,7 +170,6 @@
         document.getElementById('authSection').classList.remove('hidden');
     }
 
-    // تحويل الصورة لـ Base64
     function getBaseImage(file) {
         return new Promise((resolve) => {
             if (!file) return resolve('');
@@ -159,7 +179,6 @@
         });
     }
 
-    // إضافة دواء للأدمن
     document.getElementById('addMedForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const fileInput = document.getElementById('medImage');
@@ -180,7 +199,6 @@
         loadMedicines();
     });
 
-    // جلب الأدوية وعرضها
     async function loadMedicines() {
         const res = await fetch('/api/medicines');
         allMedicines = await res.json();
@@ -202,7 +220,6 @@
         `).join('');
     }
 
-    // إضافة للسلة
     function addToCart(id) {
         const med = allMedicines.find(m => m.id === id);
         const item = cart.find(i => i.id === id);
@@ -231,7 +248,6 @@
         totalEl.innerHTML = `الإجمالي: $${total.toFixed(2)}`;
     }
 
-    // التشخيص الذكي للأعراض
     function diagnoseSymptoms() {
         const query = document.getElementById('userSymptoms').value.trim().toLowerCase();
         const resultBox = document.getElementById('diagnoseResult');
@@ -248,7 +264,6 @@
         }
     }
 
-    // إتمام الشراء
     async function checkout() {
         if (cart.length === 0) {
             alert('السلة فارغة!');
