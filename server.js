@@ -12,34 +12,35 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false }
 });
 
-// إنشاء الجداول الأساسية
+// إنشاء الجداول بمرونة كاملة
 pool.query(`
   CREATE TABLE IF NOT EXISTS medicines (
     id SERIAL PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
+    name TEXT NOT NULL,
     price DECIMAL(10,2) NOT NULL,
-    symptoms TEXT NOT NULL,
+    symptoms TEXT,
     image TEXT
   );
 
   CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
-    fullname VARCHAR(100),
-    phone VARCHAR(30),
-    country_code VARCHAR(10) DEFAULT '+249',
-    email VARCHAR(100) UNIQUE NOT NULL,
-    password VARCHAR(50) NOT NULL,
-    role VARCHAR(20) DEFAULT 'customer'
+    fullname TEXT,
+    phone TEXT,
+    country_code TEXT,
+    email TEXT UNIQUE NOT NULL,
+    password TEXT NOT NULL,
+    role TEXT DEFAULT 'customer'
   );
 
   CREATE TABLE IF NOT EXISTS orders (
     id SERIAL PRIMARY KEY,
-    email VARCHAR(100),
+    email TEXT,
     items TEXT,
     total DECIMAL(10,2),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
   );
 `).then(async () => {
+  // إضافة حساب الأدمن الافتراضي
   await pool.query(`
     INSERT INTO users (fullname, phone, country_code, email, password, role) 
     VALUES ('مدير النظام', '912345678', '+249', 'admin@pharmacy.com', '1234', 'admin') 
@@ -47,28 +48,22 @@ pool.query(`
   `);
 }).catch(err => console.error("Database setup error:", err));
 
-// تسجيل حساب جديد
+// تسجيل حساب جديد بدون تعقيد
 app.post('/api/register', async (req, res) => {
   const { fullname, phone, country_code, email, password } = req.body;
   try {
-    // نتأكد هل الإيميل موجود أصلاً ولا لا
-    const checkUser = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
-    if (checkUser.rows.length > 0) {
-      // لو موجود، نعمل ليهو تحديث عادي
-      await pool.query(
-        'UPDATE users SET fullname = $1, phone = $2, country_code = $3, password = $4 WHERE email = $5',
-        [fullname, phone, country_code || '+249', password, email]
-      );
-    } else {
-      // لو جديد، نضيفتو
-      await pool.query(
-        'INSERT INTO users (fullname, phone, country_code, email, password, role) VALUES ($1, $2, $3, $4, $5, $6)',
-        [fullname, phone, country_code || '+249', email, password, 'customer']
-      );
-    }
-    res.json({ success: true, user: { email, role: 'customer', fullname } });
+    // حذف أي حساب قديم بنفس الإيميل لتجنب التعارض
+    await pool.query('DELETE FROM users WHERE email = $1', [email]);
+    
+    // إدخال الحساب الجديد مباشرة
+    const result = await pool.query(
+      'INSERT INTO users (fullname, phone, country_code, email, password, role) VALUES ($1, $2, $3, $4, $5, $6) RETURNING email, role, fullname',
+      [fullname || 'مستخدم', phone || '', country_code || '+249', email, password, 'customer']
+    );
+    res.json({ success: true, user: result.rows[0] });
   } catch (err) {
-    res.status(400).json({ success: false, message: 'خطأ في إدخال البيانات، تأكد من الحقول' });
+    console.error("Register error:", err);
+    res.status(400).json({ success: false, message: err.message });
   }
 });
 
