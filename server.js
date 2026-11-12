@@ -8,9 +8,11 @@ app.use(express.urlencoded({ limit: '10mb', extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  connectionString: process.env.DB_URL || process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false }
 });
+
+
 
 // إنشاء الجداول بمرونة كاملة
 pool.query(`
