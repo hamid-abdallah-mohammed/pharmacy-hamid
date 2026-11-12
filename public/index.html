@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>صيدلية الشفاء الذكية - السودان</title>
+    <title>صيدلية ذكية - السودان</title>
     <style>
         body { font-family: Tahoma, sans-serif; background: #f0f2f5; margin: 0; padding: 15px; direction: rtl; }
         .container { max-width: 900px; margin: auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
@@ -16,7 +16,7 @@
         .hidden { display: none !important; }
         
         .phone-group { display: flex; gap: 8px; }
-        .phone-group select { width: 110px; }
+        .phone-group select { width: 130px; }
 
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-top: 20px; }
         .card { background: #fff; border: 1px solid #e1e4e8; border-radius: 10px; padding: 15px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
@@ -33,11 +33,11 @@
 
 <div class="container">
     
-    <!-- قسم تسجيل الدخول / إنشاء حساب -->
+    <!-- قسم تسجيل الدخول / صيدلية ذكية -->
     <div id="authSection">
-        <h2 id="authTitle">تسجيل الدخول إلى صيدلية الشفاء</h2>
+        <h2 id="authTitle">تسجيل الدخول إلى صيدلية ذكية</h2>
         <form id="authForm">
-            <!-- حقول تظهر فقط عند إنشاء الحساب -->
+            <!-- حقول التسجيل الجديدة -->
             <div id="registerFields" class="hidden">
                 <input type="text" id="fullname" placeholder="الاسم الكامل">
                 <div class="phone-group">
@@ -53,7 +53,7 @@
             <input type="email" id="authEmail" placeholder="البريد الإلكتروني" required>
             <input type="password" id="authPassword" placeholder="كلمة المرور" required>
             <button type="submit" id="authBtn">تسجيل الدخول</button>
-            <button type="button" class="btn-success" onclick="toggleAuthMode()" id="switchBtn">إنشاء حساب جديد</button>
+            <button type="button" class="btn-success" onclick="toggleAuthMode()" id="switchBtn">صيدلية ذكية (حساب جديد)</button>
             <p id="authError" class="error"></p>
         </form>
     </div>
@@ -65,7 +65,7 @@
             <button class="btn-danger" onclick="logout()">تسجيل خروج</button>
         </div>
 
-        <h2>متجر الأدوية الذكي</h2>
+        <h2>متجر صيدلية ذكية</h2>
 
         <!-- صندوق التشخيص الذكي -->
         <div class="diagnose-box">
@@ -115,9 +115,9 @@
     function toggleAuthMode() {
         isRegisterMode = !isRegisterMode;
         document.getElementById('registerFields').classList.toggle('hidden', !isRegisterMode);
-        document.getElementById('authTitle').innerText = isRegisterMode ? 'إنشاء حساب جديد في الصيدلية' : 'تسجيل الدخول إلى صيدلية الشفاء';
+        document.getElementById('authTitle').innerText = isRegisterMode ? 'صيدلية ذكية - تسجيل حساب جديد' : 'تسجيل الدخول إلى صيدلية ذكية';
         document.getElementById('authBtn').innerText = isRegisterMode ? 'تسجيل وحفظ الحساب' : 'تسجيل الدخول';
-        document.getElementById('switchBtn').innerText = isRegisterMode ? 'لديك حساب؟ تسجيل الدخول' : 'إنشاء حساب جديد';
+        document.getElementById('switchBtn').innerText = isRegisterMode ? 'لديك حساب؟ تسجيل الدخول' : 'صيدلية ذكية (حساب جديد)';
         document.getElementById('authError').innerText = '';
     }
 
