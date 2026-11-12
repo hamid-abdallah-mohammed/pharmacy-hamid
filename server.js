@@ -12,7 +12,6 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false }
 });
 
-// إعادة بناء جدول المستخدمين والأدوية والطلبات بدقة
 pool.query(`
   CREATE TABLE IF NOT EXISTS medicines (
     id SERIAL PRIMARY KEY,
@@ -47,21 +46,23 @@ pool.query(`
   `);
 }).catch(err => console.error("Database setup error:", err));
 
-// تسجيل حساب جديد مع الاسم والهاتف والدولة
+// تسجيل أو تحديث حساب المستخدم تلقائياً لمنع أي خطأ
 app.post('/api/register', async (req, res) => {
   const { fullname, phone, country_code, email, password } = req.body;
   try {
-    const result = await pool.query(
-      'INSERT INTO users (fullname, phone, country_code, email, password, role) VALUES ($1, $2, $3, $4, $5, $6) RETURNING email, role, fullname',
-      [fullname, phone, country_code || '+249', email, password, 'customer']
-    );
-    res.json({ success: true, user: result.rows[0] });
+    await pool.query(`
+      INSERT INTO users (fullname, phone, country_code, email, password, role) 
+      VALUES ($1, $2, $3, $4, $5, 'customer')
+      ON CONFLICT (email) 
+      DO UPDATE SET fullname = EXCLUDED.fullname, phone = EXCLUDED.phone, password = EXCLUDED.password;
+    `, [fullname, phone, country_code || '+249', email, password]);
+    
+    res.json({ success: true, user: { email, role: 'customer', fullname } });
   } catch (err) {
-    res.status(400).json({ success: false, message: 'البريد الإلكتروني مستخدم من قبل أو هناك خطأ في البيانات' });
+    res.status(400).json({ success: false, message: 'حدث خطأ في بيانات التسجيل' });
   }
 });
 
-// تسجيل الدخول
 app.post('/api/login', async (req, res) => {
   const { email, password } = req.body;
   try {
